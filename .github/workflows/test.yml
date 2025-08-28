@@ -80,7 +80,7 @@ jobs:
         result = sdl2_alpha.blend_pixel((255,0,0,128), (0,255,0,255))
         print(f'Test blend result: {result}')
         assert result[0] > 100 and result[1] > 100, 'Blend test failed'
-        print('✅ sdl2_alpha working!')
+        print('sdl2_alpha working!')
         "
 
   lint:
