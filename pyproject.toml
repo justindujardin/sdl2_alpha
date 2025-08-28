@@ -5,8 +5,9 @@ build-backend = "maturin"
 [project]
 name = "sdl2_alpha"
 description = "Fast, correct alpha blending for SDL2 surfaces"
+readme = "README.md"
 authors = [
-    {name = "Rendery Team"}
+    {name = "Justin DuJardin", email = "justin@dujardinconsulting.com"}
 ]
 include = ["sdl2_alpha.pyi"]
 license = {text = "MIT"}

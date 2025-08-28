@@ -1,9 +1,9 @@
 [package]
 name = "sdl2_alpha"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Fast, correct alpha blending for SDL2 surfaces"
-authors = ["Justin DuJardin"]
+authors = ["Justin DuJardin <justin@dujardinconsulting.com>"]
 license = "MIT"
 
 [lib]
