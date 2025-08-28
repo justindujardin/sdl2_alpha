@@ -153,7 +153,7 @@ result = sdl2_alpha.blend_pixel(
     (64, 128, 255, 255)   # dst (r,g,b,a)  
 )
 
-# Zero-copy in-place blending (FAST - this is what Rendery uses)
+# Zero-copy in-place blending (FAST - the high-performance path)
 sdl2_alpha.blend_rect_inplace(
     src_ptr,        # Raw pointer to source pixels
     src_width, src_height,
@@ -182,9 +182,9 @@ blended_bytes = sdl2_alpha.blend_rect(
 - **Automatic clipping** handles negative coordinates and off-screen blits
 - **Fast paths** for fully opaque (direct copy) and fully transparent (skip) pixels
 
-## Integration with Rendery
+## Integration with SDL2 Applications
 
-sdl2_alpha is automatically used by Rendery's SDL2 surface backend. All `surface.blit()` calls with alpha blending go through sdl2_alpha's zero-copy fast path.
+sdl2_alpha provides a drop-in replacement for SDL2's broken alpha blending. Use the zero-copy `blend_rect_inplace()` function for maximum performance in composition-heavy applications.
 
 ## License
 
