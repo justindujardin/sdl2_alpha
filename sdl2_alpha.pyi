@@ -1,4 +1,4 @@
-"""Type stubs for blendy - Fast Alpha Blending for SDL2"""
+"""Type stubs for sdl2_alpha - Fast Alpha Blending for SDL2"""
 
 from typing import Tuple
 
@@ -16,7 +16,7 @@ def blend_pixel(
         Blended pixel as (r, g, b, a) tuple (0-255)
         
     Example:
-        result = blendy.blend_pixel((255, 0, 0, 128), (0, 255, 0, 255))
+        result = sdl2_alpha.blend_pixel((255, 0, 0, 128), (0, 255, 0, 255))
     """
     ...
 
@@ -112,7 +112,7 @@ def blend_rect_inplace(
         dst_ptr = ctypes.cast(dst_surface.pixels, ctypes.c_void_p).value
         
         # Blend 50x50 region from (0,0) to (25,25)
-        blendy.blend_rect_inplace(
+        sdl2_alpha.blend_rect_inplace(
             src_ptr, 100, 100, 0, 0, 50, 50,
             dst_ptr, 200, 200, 25, 25
         )

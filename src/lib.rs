@@ -282,7 +282,7 @@ unsafe fn blend_rect_inplace(
 }
 
 #[pymodule]
-fn blendy(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn sdl2_alpha(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(blend_pixel, m)?)?;
     m.add_function(wrap_pyfunction!(blend_surface, m)?)?;
     m.add_function(wrap_pyfunction!(blend_rect, m)?)?;

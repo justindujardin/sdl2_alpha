@@ -1,15 +1,15 @@
-# Blendy - Fast Alpha Blending for SDL2
+# sdl2_alpha - Fast Alpha Blending for SDL2
 
-Blendy provides mathematically correct alpha blending to fix SDL2's broken alpha compositing behavior. Built with Rust and PyO3 for maximum performance.
+sdl2_alpha provides mathematically correct alpha blending to fix SDL2's broken alpha compositing behavior. Built with Rust and PyO3 for maximum performance.
 
-## Why Blendy?
+## Why sdl2_alpha?
 
 SDL2's built-in alpha blending has fundamental flaws:
 - Incorrect destination alpha handling
 - Platform-specific premultiplication inconsistencies  
 - Accumulation errors that degrade transparency (the dreaded "persistent haze")
 
-Blendy implements Porter-Duff "over" compositing with proper premultiplied alpha math, delivering visually correct results for composition-heavy applications.
+sdl2_alpha implements Porter-Duff "over" compositing with proper premultiplied alpha math, delivering visually correct results for composition-heavy applications.
 
 ## 🚀 Development Setup (Complete Newbie Guide)
 
@@ -36,7 +36,7 @@ pip install maturin
 ### Development Workflow
 
 ```bash
-cd blendy/
+cd sdl2_alpha/
 
 # Development build (fast compile, not optimized, includes debug info)
 maturin develop
@@ -48,7 +48,7 @@ maturin develop
 ### Release Builds (for production/benchmarking)
 
 ```bash
-cd blendy/
+cd sdl2_alpha/
 
 # Release build (slow compile, fully optimized)
 maturin build --release
@@ -63,7 +63,7 @@ maturin develop --release
 ### Testing Your Changes
 
 ```bash
-cd blendy/
+cd sdl2_alpha/
 
 # Install test dependencies
 pip install -e .[test]
@@ -76,10 +76,10 @@ pytest tests/test_performance.py -v -s
 
 # Quick functionality test
 python -c "
-import blendy
-result = blendy.blend_pixel((255,0,0,128), (0,255,0,255))
+import sdl2_alpha
+result = sdl2_alpha.blend_pixel((255,0,0,128), (0,255,0,255))
 print(f'Test blend result: {result}')
-print('✅ Blendy working!' if result[0] > 100 and result[1] > 100 else '❌ Something wrong')
+print('✅ sdl2_alpha working!' if result[0] > 100 and result[1] > 100 else '❌ Something wrong')
 "
 ```
 
@@ -101,7 +101,7 @@ print('✅ Blendy working!' if result[0] > 100 and result[1] > 100 else '❌ Som
 
 ```bash
 # Clean everything and start over
-cd blendy/
+cd sdl2_alpha/
 cargo clean
 rm -rf target/
 
@@ -133,8 +133,8 @@ cargo check  # Shows errors without building Python extension
 **"Import errors after rebuild"**:
 ```bash
 # Sometimes Python caches the old version
-python -c "import sys; print([p for p in sys.path if 'blendy' in p])"
-pip uninstall blendy
+python -c "import sys; print([p for p in sys.path if 'sdl2_alpha' in p])"
+pip uninstall sdl2_alpha
 maturin develop
 ```
 
@@ -145,16 +145,16 @@ maturin develop
 ## API Usage
 
 ```python
-import blendy
+import sdl2_alpha
 
 # Blend single pixel (for testing)
-result = blendy.blend_pixel(
+result = sdl2_alpha.blend_pixel(
     (255, 128, 64, 128),  # src (r,g,b,a)
     (64, 128, 255, 255)   # dst (r,g,b,a)  
 )
 
 # Zero-copy in-place blending (FAST - this is what Rendery uses)
-blendy.blend_rect_inplace(
+sdl2_alpha.blend_rect_inplace(
     src_ptr,        # Raw pointer to source pixels
     src_width, src_height,
     src_x, src_y, src_w, src_h,  # Source rectangle (can be negative)
@@ -164,11 +164,11 @@ blendy.blend_rect_inplace(
 )
 
 # Copy-based blending (slower but easier)
-blended_bytes = blendy.blend_surface(
+blended_bytes = sdl2_alpha.blend_surface(
     src_bytes, dst_bytes, width, height
 )
 
-blended_bytes = blendy.blend_rect(
+blended_bytes = sdl2_alpha.blend_rect(
     src_bytes, src_width, src_height, src_x, src_y, src_w, src_h,
     dst_bytes, dst_width, dst_height, dst_x, dst_y
 )
@@ -184,7 +184,7 @@ blended_bytes = blendy.blend_rect(
 
 ## Integration with Rendery
 
-Blendy is automatically used by Rendery's SDL2 surface backend. All `surface.blit()` calls with alpha blending go through blendy's zero-copy fast path.
+sdl2_alpha is automatically used by Rendery's SDL2 surface backend. All `surface.blit()` calls with alpha blending go through sdl2_alpha's zero-copy fast path.
 
 ## License
 

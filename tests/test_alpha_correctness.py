@@ -1,11 +1,11 @@
 """
 Test alpha blending mathematical correctness against known reference values.
 
-These tests verify that blendy produces mathematically correct Porter-Duff
+These tests verify that sdl2_alpha produces mathematically correct Porter-Duff
 "over" compositing results, focusing on edge cases that reveal alpha math bugs.
 """
 import pytest
-import blendy
+import sdl2_alpha
 
 
 class TestPixelBlending:
@@ -13,7 +13,7 @@ class TestPixelBlending:
     
     def test_fully_opaque_over_opaque(self):
         """Fully opaque source should completely replace destination."""
-        result = blendy.blend_pixel(
+        result = sdl2_alpha.blend_pixel(
             (255, 128, 64, 255),   # Opaque orange
             (64, 128, 255, 255)    # Opaque blue  
         )
@@ -21,7 +21,7 @@ class TestPixelBlending:
     
     def test_fully_transparent_over_opaque(self):
         """Fully transparent source should leave destination unchanged."""
-        result = blendy.blend_pixel(
+        result = sdl2_alpha.blend_pixel(
             (255, 128, 64, 0),     # Transparent orange
             (64, 128, 255, 255)    # Opaque blue
         )
@@ -29,7 +29,7 @@ class TestPixelBlending:
     
     def test_half_alpha_blending(self):
         """Test 50% alpha blending produces expected interpolation."""
-        result = blendy.blend_pixel(
+        result = sdl2_alpha.blend_pixel(
             (255, 255, 255, 128),  # 50% white
             (0, 0, 0, 255)         # Opaque black
         )
@@ -43,7 +43,7 @@ class TestPixelBlending:
     def test_premultiplied_alpha_correctness(self):
         """Test that premultiplied alpha math prevents dark halos."""
         # This is the classic test case that reveals incorrect alpha handling
-        result = blendy.blend_pixel(
+        result = sdl2_alpha.blend_pixel(
             (255, 0, 0, 64),       # 25% red
             (0, 255, 0, 255)       # Opaque green
         )
@@ -57,7 +57,7 @@ class TestPixelBlending:
     
     def test_zero_alpha_handling(self):
         """Test edge case of zero alpha in both source and destination."""
-        result = blendy.blend_pixel(
+        result = sdl2_alpha.blend_pixel(
             (128, 128, 128, 0),    # Transparent gray
             (64, 64, 64, 0)        # Transparent dark gray
         )
@@ -82,7 +82,7 @@ class TestSurfaceBlending:
         red_surface = self.create_test_surface(width, height, (255, 0, 0, 128))
         blue_surface = self.create_test_surface(width, height, (0, 0, 255, 255))
         
-        result_bytes = blendy.blend_surface(red_surface, blue_surface, width, height)
+        result_bytes = sdl2_alpha.blend_surface(red_surface, blue_surface, width, height)
         
         # Check first pixel
         result_pixel = (result_bytes[0], result_bytes[1], result_bytes[2], result_bytes[3])
@@ -96,7 +96,7 @@ class TestSurfaceBlending:
     def test_buffer_size_validation(self):
         """Test that buffer size mismatches are caught."""
         with pytest.raises(ValueError, match="Buffer size mismatch"):
-            blendy.blend_surface(
+            sdl2_alpha.blend_surface(
                 b"short",      # Wrong size
                 b"also_short", # Wrong size  
                 100, 100       # Claims 100x100
@@ -105,7 +105,7 @@ class TestSurfaceBlending:
     def test_empty_surface(self):
         """Test edge case of empty surface."""
         empty_bytes = b""
-        result = blendy.blend_surface(empty_bytes, empty_bytes, 0, 0)
+        result = sdl2_alpha.blend_surface(empty_bytes, empty_bytes, 0, 0)
         assert result == b""
 
 
@@ -128,7 +128,7 @@ class TestRectBlending:
         surface = self.create_checkered_surface(4, 4)
         
         with pytest.raises(ValueError, match="Source rect out of bounds"):
-            blendy.blend_rect(
+            sdl2_alpha.blend_rect(
                 surface, 4, 4, 2, 2, 4, 4,  # Source rect extends past edge
                 surface, 4, 4, 0, 0          # Destination  
             )
@@ -142,7 +142,7 @@ class TestRectBlending:
         blue_surface = bytes([0, 0, 255, 255] * width * height)
         
         # Blend 4x4 region from center
-        result_bytes = blendy.blend_rect(
+        result_bytes = sdl2_alpha.blend_rect(
             red_surface, width, height, 2, 2, 4, 4,  # Source: center 4x4
             blue_surface, width, height, 2, 2        # Dest: same position
         )
@@ -175,7 +175,7 @@ class TestAccumulation:
         # Apply multiple 10% black layers
         current = bg
         for _ in range(10):
-            current = blendy.blend_pixel(
+            current = sdl2_alpha.blend_pixel(
                 (0, 0, 0, 26),  # ~10% black (26/255 ≈ 0.1)
                 current
             )

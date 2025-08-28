@@ -1,5 +1,5 @@
 """
-Pytest configuration for blendy tests.
+Pytest configuration for sdl2_alpha tests.
 """
 import pytest
 

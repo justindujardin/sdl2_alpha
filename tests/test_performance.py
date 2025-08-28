@@ -1,12 +1,12 @@
 """
-Performance tests for blendy alpha blending operations.
+Performance tests for sdl2_alpha alpha blending operations.
 
-These tests verify that blendy meets performance expectations
+These tests verify that sdl2_alpha meets performance expectations
 and scales appropriately with surface size.
 """
 import time
 import pytest
-import blendy
+import sdl2_alpha
 
 
 class TestPerformance:
@@ -29,7 +29,7 @@ class TestPerformance:
         
         # Measure blend time
         start_time = time.perf_counter()
-        result = blendy.blend_surface(red_data, blue_data, width, height)
+        result = sdl2_alpha.blend_surface(red_data, blue_data, width, height)
         end_time = time.perf_counter()
         
         blend_time = end_time - start_time
@@ -65,7 +65,7 @@ class TestPerformance:
         start_time = time.perf_counter()
         for _ in range(iterations):
             for src, dst in test_cases:
-                blendy.blend_pixel(src, dst)
+                sdl2_alpha.blend_pixel(src, dst)
         end_time = time.perf_counter()
         
         total_time = end_time - start_time
@@ -101,7 +101,7 @@ class TestPerformance:
             rect_pixels = rect_w * rect_h
             
             start_time = time.perf_counter()
-            result = blendy.blend_rect(
+            result = sdl2_alpha.blend_rect(
                 src_data, width, height, 0, 0, rect_w, rect_h,
                 dst_data, width, height, 0, 0
             )
@@ -140,7 +140,7 @@ class TestMemoryEfficiency:
         assert len(dst_data) == expected_size
         
         # Blend should not fail due to memory constraints
-        result = blendy.blend_surface(src_data, dst_data, width, height)
+        result = sdl2_alpha.blend_surface(src_data, dst_data, width, height)
         
         # Output should be exactly the expected size
         assert len(result) == expected_size, "Output size should match input"
