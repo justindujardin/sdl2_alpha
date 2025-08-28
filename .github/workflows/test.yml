@@ -1,0 +1,71 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin
+
+    - name: Build extension (development mode)
+      run: maturin develop
+
+    - name: Install test dependencies
+      run: pip install -e .[test]
+
+    - name: Run tests
+      run: pytest tests/ -v
+
+    - name: Quick functionality test
+      run: |
+        python -c "
+        import sdl2_alpha
+        result = sdl2_alpha.blend_pixel((255,0,0,128), (0,255,0,255))
+        print(f'Test blend result: {result}')
+        assert result[0] > 100 and result[1] > 100, 'Blend test failed'
+        print('✅ sdl2_alpha working!')
+        "
+
+  lint:
+    name: Lint Rust code
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        override: true
+
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+
+    - name: Run cargo check
+      run: cargo check
