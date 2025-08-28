@@ -3,7 +3,7 @@ name = "sdl2_alpha"
 version = "0.1.0"
 edition = "2021"
 description = "Fast, correct alpha blending for SDL2 surfaces"
-authors = ["Rendery Team"]
+authors = ["Justin DuJardin"]
 license = "MIT"
 
 [lib]
