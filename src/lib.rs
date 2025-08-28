@@ -1,18 +1,20 @@
+#![allow(clippy::useless_conversion)]
+
+use palette::{blend::Compose, LinSrgba};
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
-use palette::{LinSrgba, blend::Compose};
 use rayon::prelude::*;
 use std::slice;
 
 /// Fast, correct alpha blending for SDL2 surfaces
-/// 
+///
 /// Provides mathematically correct premultiplied alpha blending
 /// to fix SDL2's broken alpha compositing behavior.
 
 #[derive(Debug, Clone, Copy)]
 pub struct Rgba8 {
     pub r: u8,
-    pub g: u8, 
+    pub g: u8,
     pub b: u8,
     pub a: u8,
 }
@@ -22,7 +24,7 @@ impl Rgba8 {
     fn to_linear(self) -> LinSrgba<f32> {
         LinSrgba::new(
             self.r as f32 / 255.0,
-            self.g as f32 / 255.0, 
+            self.g as f32 / 255.0,
             self.b as f32 / 255.0,
             self.a as f32 / 255.0,
         )
@@ -42,65 +44,81 @@ impl Rgba8 {
 /// Alpha blend a single pixel using Porter-Duff "over" operation
 #[pyfunction]
 fn blend_pixel(src: (u8, u8, u8, u8), dst: (u8, u8, u8, u8)) -> (u8, u8, u8, u8) {
-    let src_rgba = Rgba8 { r: src.0, g: src.1, b: src.2, a: src.3 };
-    let dst_rgba = Rgba8 { r: dst.0, g: dst.1, b: dst.2, a: dst.3 };
-    
+    let src_rgba = Rgba8 {
+        r: src.0,
+        g: src.1,
+        b: src.2,
+        a: src.3,
+    };
+    let dst_rgba = Rgba8 {
+        r: dst.0,
+        g: dst.1,
+        b: dst.2,
+        a: dst.3,
+    };
+
     let src_linear = src_rgba.to_linear();
     let dst_linear = dst_rgba.to_linear();
-    
+
     // Porter-Duff "over" operation with correct premultiplied alpha
     let result = src_linear.over(dst_linear);
     let result_rgba = Rgba8::from_linear(result);
-    
+
     (result_rgba.r, result_rgba.g, result_rgba.b, result_rgba.a)
 }
 
 /// Blend source buffer over destination buffer
-/// 
+///
 /// Both buffers must be RGBA8888 format with same dimensions.
 /// Performs parallel processing for large surfaces.
 #[pyfunction]
-fn blend_surface(py: Python, src_bytes: &Bound<'_, PyBytes>, dst_bytes: &Bound<'_, PyBytes>, width: u32, height: u32) -> PyResult<PyObject> {
+fn blend_surface(
+    py: Python,
+    src_bytes: &Bound<'_, PyBytes>,
+    dst_bytes: &Bound<'_, PyBytes>,
+    width: u32,
+    height: u32,
+) -> PyResult<PyObject> {
     let src_data = src_bytes.as_bytes();
     let dst_data = dst_bytes.as_bytes();
-    
+
     let expected_len = (width * height * 4) as usize;
     if src_data.len() != expected_len || dst_data.len() != expected_len {
-        return Err(pyo3::exceptions::PyValueError::new_err(
-            format!("Buffer size mismatch: expected {}, got src:{} dst:{}", 
-                   expected_len, src_data.len(), dst_data.len())
-        ));
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Buffer size mismatch: expected {}, got src:{} dst:{}",
+            expected_len,
+            src_data.len(),
+            dst_data.len()
+        )));
     }
 
     // Convert to RGBA pixels and blend in parallel
-    let mut result: Vec<u8> = Vec::with_capacity(expected_len);
-    result.resize(expected_len, 0);
-    
-    let pixel_count = (width * height) as usize;
-    
+    let mut result: Vec<u8> = vec![0; expected_len];
+
     // Process in parallel chunks
-    result.par_chunks_mut(4)
+    result
+        .par_chunks_mut(4)
         .zip(src_data.par_chunks(4))
         .zip(dst_data.par_chunks(4))
         .for_each(|((result_pixel, src_pixel), dst_pixel)| {
             let src_rgba = Rgba8 {
                 r: src_pixel[0],
-                g: src_pixel[1], 
+                g: src_pixel[1],
                 b: src_pixel[2],
                 a: src_pixel[3],
             };
             let dst_rgba = Rgba8 {
                 r: dst_pixel[0],
                 g: dst_pixel[1],
-                b: dst_pixel[2], 
+                b: dst_pixel[2],
                 a: dst_pixel[3],
             };
-            
+
             let src_linear = src_rgba.to_linear();
             let dst_linear = dst_rgba.to_linear();
             let blended = src_linear.over(dst_linear);
             let result_rgba = Rgba8::from_linear(blended);
-            
+
             result_pixel[0] = result_rgba.r;
             result_pixel[1] = result_rgba.g;
             result_pixel[2] = result_rgba.b;
@@ -111,44 +129,49 @@ fn blend_surface(py: Python, src_bytes: &Bound<'_, PyBytes>, dst_bytes: &Bound<'
 }
 
 /// Blend with rectangular region support
-#[pyfunction] 
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn blend_rect(
     py: Python,
-    src_bytes: &Bound<'_, PyBytes>, 
+    src_bytes: &Bound<'_, PyBytes>,
     src_width: u32,
     src_height: u32,
     src_x: u32,
     src_y: u32,
-    src_w: u32, 
+    src_w: u32,
     src_h: u32,
     dst_bytes: &Bound<'_, PyBytes>,
     dst_width: u32,
-    dst_height: u32, 
+    dst_height: u32,
     dst_x: u32,
-    dst_y: u32
+    dst_y: u32,
 ) -> PyResult<PyObject> {
     // Bounds checking
     if src_x + src_w > src_width || src_y + src_h > src_height {
-        return Err(pyo3::exceptions::PyValueError::new_err("Source rect out of bounds"));
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "Source rect out of bounds",
+        ));
     }
     if dst_x + src_w > dst_width || dst_y + src_h > dst_height {
-        return Err(pyo3::exceptions::PyValueError::new_err("Destination rect out of bounds"));
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "Destination rect out of bounds",
+        ));
     }
-    
+
     let src_data = src_bytes.as_bytes();
     let dst_data = dst_bytes.as_bytes();
     let mut result = dst_data.to_vec();
-    
+
     // Blit rect with alpha blending
     for y in 0..src_h {
         for x in 0..src_w {
             let src_idx = (((src_y + y) * src_width + (src_x + x)) * 4) as usize;
             let dst_idx = (((dst_y + y) * dst_width + (dst_x + x)) * 4) as usize;
-            
+
             let src_rgba = Rgba8 {
                 r: src_data[src_idx],
                 g: src_data[src_idx + 1],
-                b: src_data[src_idx + 2], 
+                b: src_data[src_idx + 2],
                 a: src_data[src_idx + 3],
             };
             let dst_rgba = Rgba8 {
@@ -157,39 +180,40 @@ fn blend_rect(
                 b: result[dst_idx + 2],
                 a: result[dst_idx + 3],
             };
-            
+
             let src_linear = src_rgba.to_linear();
-            let dst_linear = dst_rgba.to_linear(); 
+            let dst_linear = dst_rgba.to_linear();
             let blended = src_linear.over(dst_linear);
             let result_rgba = Rgba8::from_linear(blended);
-            
+
             result[dst_idx] = result_rgba.r;
             result[dst_idx + 1] = result_rgba.g;
             result[dst_idx + 2] = result_rgba.b;
             result[dst_idx + 3] = result_rgba.a;
         }
     }
-    
+
     Ok(PyBytes::new_bound(py, &result).into())
 }
 
 /// Fast in-place alpha blending with automatic clipping
-/// 
+///
 /// SAFETY: Caller must ensure pointers are valid
-#[pyfunction] 
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
 unsafe fn blend_rect_inplace(
     src_ptr: usize,
     src_width: u32,
     src_height: u32,
     src_x: i32,
-    src_y: i32, 
+    src_y: i32,
     src_w: u32,
     src_h: u32,
     dst_ptr: usize,
     dst_width: u32,
     dst_height: u32,
     dst_x: i32,
-    dst_y: i32
+    dst_y: i32,
 ) -> PyResult<()> {
     // Fast clipping logic - all in one place
     let mut sx = src_x;
@@ -198,31 +222,53 @@ unsafe fn blend_rect_inplace(
     let mut sh = src_h as i32;
     let mut dx = dst_x;
     let mut dy = dst_y;
-    
+
     // Clip source bounds
-    if sx < 0 { dx -= sx; sw += sx; sx = 0; }
-    if sy < 0 { dy -= sy; sh += sy; sy = 0; }
-    if sx + sw > src_width as i32 { sw = src_width as i32 - sx; }
-    if sy + sh > src_height as i32 { sh = src_height as i32 - sy; }
-    
+    if sx < 0 {
+        dx -= sx;
+        sw += sx;
+        sx = 0;
+    }
+    if sy < 0 {
+        dy -= sy;
+        sh += sy;
+        sy = 0;
+    }
+    if sx + sw > src_width as i32 {
+        sw = src_width as i32 - sx;
+    }
+    if sy + sh > src_height as i32 {
+        sh = src_height as i32 - sy;
+    }
+
     // Clip destination bounds
-    if dx < 0 { sx -= dx; sw += dx; dx = 0; }
-    if dy < 0 { sy -= dy; sh += dy; dy = 0; }
-    if dx + sw > dst_width as i32 { sw = dst_width as i32 - dx; }
-    if dy + sh > dst_height as i32 { sh = dst_height as i32 - dy; }
-    
+    if dx < 0 {
+        sx -= dx;
+        sw += dx;
+        dx = 0;
+    }
+    if dy < 0 {
+        sy -= dy;
+        sh += dy;
+        dy = 0;
+    }
+    if dx + sw > dst_width as i32 {
+        sw = dst_width as i32 - dx;
+    }
+    if dy + sh > dst_height as i32 {
+        sh = dst_height as i32 - dy;
+    }
+
     // Early exit if clipped to nothing
-    if sw <= 0 || sh <= 0 { return Ok(()); }
+    if sw <= 0 || sh <= 0 {
+        return Ok(());
+    }
 
     // Create safe slices from raw pointers
-    let src_slice = slice::from_raw_parts(
-        src_ptr as *const u8,
-        (src_width * src_height * 4) as usize
-    );
-    let dst_slice = slice::from_raw_parts_mut(
-        dst_ptr as *mut u8,
-        (dst_width * dst_height * 4) as usize
-    );
+    let src_slice =
+        slice::from_raw_parts(src_ptr as *const u8, (src_width * src_height * 4) as usize);
+    let dst_slice =
+        slice::from_raw_parts_mut(dst_ptr as *mut u8, (dst_width * dst_height * 4) as usize);
 
     // Use clipped dimensions (cast back to u32 after clipping)
     let final_sw = sw as u32;
@@ -231,7 +277,7 @@ unsafe fn blend_rect_inplace(
     let final_sy = sy as u32;
     let final_dx = dx as u32;
     let final_dy = dy as u32;
-    
+
     // Optimized single-threaded in-place blending
     for y in 0..final_sh {
         for x in 0..final_sw {
@@ -240,7 +286,7 @@ unsafe fn blend_rect_inplace(
 
             // Fast path optimizations
             let src_a = src_slice[src_idx + 3];
-            
+
             if src_a == 0 {
                 // Fully transparent - skip
                 continue;
