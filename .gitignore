@@ -31,3 +31,6 @@ htmlcov/
 
 # Benchmarking results
 benchmark_results/
+
+# Claude Memories
+CLAUDE.md
