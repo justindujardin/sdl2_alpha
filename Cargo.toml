@@ -1,0 +1,24 @@
+[package]
+name = "blendy"
+version = "0.1.0"
+edition = "2021"
+description = "Fast, correct alpha blending for SDL2 surfaces"
+authors = ["Rendery Team"]
+license = "MIT"
+
+[lib]
+name = "blendy"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py38"] }
+palette = { version = "0.7", features = ["std"] }
+rayon = "1.10"  # For parallel processing of large surfaces
+
+[build-dependencies]
+pyo3-build-config = "0.22"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
