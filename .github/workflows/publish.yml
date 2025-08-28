@@ -69,6 +69,7 @@ jobs:
         path: dist-artifacts
 
     - name: Flatten artifacts
+      shell: bash
       run: |
         mkdir -p dist
         find dist-artifacts -name "*.whl" -exec cp {} dist/ \;
