@@ -23,22 +23,33 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
+    - name: Create virtual environment
+      run: python -m venv .venv
+
+    - name: Activate venv and install dependencies
       run: |
+        source .venv/bin/activate
         python -m pip install --upgrade pip
         pip install maturin
 
     - name: Build extension (development mode)
-      run: maturin develop
+      run: |
+        source .venv/bin/activate
+        maturin develop
 
     - name: Install test dependencies
-      run: pip install -e .[test]
+      run: |
+        source .venv/bin/activate
+        pip install -e .[test]
 
     - name: Run tests
-      run: pytest tests/ -v
+      run: |
+        source .venv/bin/activate
+        pytest tests/ -v
 
     - name: Quick functionality test
       run: |
+        source .venv/bin/activate
         python -c "
         import sdl2_alpha
         result = sdl2_alpha.blend_pixel((255,0,0,128), (0,255,0,255))
