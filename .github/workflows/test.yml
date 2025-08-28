@@ -23,22 +23,58 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Create virtual environment
+      run: python -m venv .venv
+
     - name: Install dependencies
+      shell: bash
       run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
         python -m pip install --upgrade pip
         pip install maturin
 
     - name: Build extension (development mode)
-      run: maturin develop
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
+        maturin develop
 
     - name: Install test dependencies
-      run: pip install -e .[test]
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
+        pip install -e .[test]
 
     - name: Run tests
-      run: pytest tests/ -v
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
+        pytest tests/ -v
 
     - name: Quick functionality test
+      shell: bash
       run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
         python -c "
         import sdl2_alpha
         result = sdl2_alpha.blend_pixel((255,0,0,128), (0,255,0,255))
